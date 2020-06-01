@@ -10,7 +10,7 @@ from typing import List, Tuple, Dict, Any, Union, Set
 
 
 def compute_transactions(ledger):
-    assert round(sum(ledger.values()), 2) == 0
+    assert round(sum(ledger.values()), 2) == 0, f"{round(sum(ledger.values()), 2)}"
     neg = []
     pos = []
     for name, value in ledger.items():
@@ -36,7 +36,7 @@ def compute_transactions(ledger):
     return transactions
 
 
-def get_spreadsheet_data() -> Tuple[Dict[str, float], Dict[str, str]]:
+def get_spreadsheet_data() -> Tuple[Dict[str, float], Dict[str, str], Set[str]]:
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive",
@@ -90,7 +90,7 @@ def get_spreadsheet_data() -> Tuple[Dict[str, float], Dict[str, str]]:
         for (name, results_dict) in all_results.items()
     }
 
-    return summed_results, venmo_info
+    return summed_results, venmo_info, game_ids_to_settle_set
 
 
 def settle_proxies(proxies, data) -> None:
@@ -106,7 +106,7 @@ def settle_proxies(proxies, data) -> None:
     return proxied_data
 
 
-def print_ledger(data, venmo_info, transactions) -> str:
+def print_ledger(data, venmo_info, transactions, game_ids_settled) -> str:
     out_string = "BILLS\n=============\n"
 
     for name in data:
@@ -119,6 +119,8 @@ def print_ledger(data, venmo_info, transactions) -> str:
     for debtee, debtor, amount in transactions:
         out_string += f"{debtee} ({venmo_info.get(debtee)}) requests ${amount} from {debtor} ({(venmo_info.get(debtor))})\n"
 
+    out_string += f"\nGames Settled\n=================\n{', '.join(game_ids_settled)}"
+
     return out_string
 
 
@@ -127,7 +129,7 @@ def main():
     parser.add_argument("--proxies", dest="proxies", type=str)
     args = parser.parse_args()
 
-    data, venmo_info = get_spreadsheet_data()
+    data, venmo_info, game_ids_settled = get_spreadsheet_data()
     original_data = deepcopy(data)
 
     if args.proxies:
@@ -135,7 +137,7 @@ def main():
 
     transactions = compute_transactions(data)
 
-    out_string = print_ledger(original_data, venmo_info, transactions)
+    out_string = print_ledger(original_data, venmo_info, transactions, game_ids_settled)
     print(out_string)
 
 
