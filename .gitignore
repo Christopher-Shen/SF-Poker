@@ -1,5 +1,8 @@
 # user specified ignores
 SF_Poker_Secrets.json
+.DS_Store
+.vscode
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
