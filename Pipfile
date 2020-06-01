@@ -9,6 +9,8 @@ verify_ssl = true
 pre-commit = "*"
 gspread = "*"
 oauth2client = "*"
+pandas = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.7"
