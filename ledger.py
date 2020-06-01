@@ -3,6 +3,7 @@ import gspread  # type: ignore
 import json
 import pandas as pd  # type: ignore
 
+from copy import deepcopy
 from heapq import heapify, heappush, heappop
 from oauth2client.service_account import ServiceAccountCredentials  # type: ignore
 from typing import List, Tuple, Dict, Any, Union, Set
@@ -92,6 +93,19 @@ def get_spreadsheet_data() -> Tuple[Dict[str, float], Dict[str, str]]:
     return summed_results, venmo_info
 
 
+def settle_proxies(proxies, data) -> None:
+    proxy_names = proxies.split(",")
+
+    assert data[proxy_names[0]]
+    assert data[proxy_names[1]]
+
+    proxied_data = deepcopy(data)
+    proxied_data[proxy_names[1]] = data[proxy_names[1]] + data[proxy_names[0]]
+    del proxied_data[proxy_names[0]]
+
+    return proxied_data
+
+
 def print_ledger(data, venmo_info, transactions) -> str:
     out_string = "BILLS\n=============\n"
 
@@ -109,11 +123,19 @@ def print_ledger(data, venmo_info, transactions) -> str:
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--proxies", dest="proxies", type=str)
+    args = parser.parse_args()
+
     data, venmo_info = get_spreadsheet_data()
+    original_data = deepcopy(data)
+
+    if args.proxies:
+        data = settle_proxies(args.proxies, data)
 
     transactions = compute_transactions(data)
 
-    out_string = print_ledger(data, venmo_info, transactions)
+    out_string = print_ledger(original_data, venmo_info, transactions)
     print(out_string)
 
 
