@@ -93,21 +93,34 @@ def get_spreadsheet_data() -> Tuple[Dict[str, float], Dict[str, str], Set[str]]:
     return summed_results, venmo_info, game_ids_to_settle_set
 
 
-def settle_proxies(proxies, data) -> None:
-    proxy_names = proxies.split(",")
-
-    assert data[proxy_names[0]]
-    assert data[proxy_names[1]]
-
+def settle_proxies(
+    proxies, data
+) -> Tuple[Dict[str, float], List[Tuple[str, str, float]]]:
     proxied_data = deepcopy(data)
-    proxied_data[proxy_names[1]] = data[proxy_names[1]] + data[proxy_names[0]]
-    del proxied_data[proxy_names[0]]
+    proxy_transactions = []
 
-    return proxied_data
+    proxy_groups = proxies.split(";")
+    for proxy_pair in proxy_groups:
+        proxy_names = proxy_pair.split(",")
+        getting_proxied = proxy_names[0]
+        proxy = proxy_names[1]
+
+        assert data[getting_proxied]
+        assert data[proxy]
+
+        proxy_amount = data[getting_proxied]
+
+        proxied_data[proxy] = data[proxy] + proxy_amount
+        del proxied_data[getting_proxied]
+        proxy_transactions.append((proxy, getting_proxied, -proxy_amount))
+
+    return proxied_data, proxy_transactions
 
 
-def print_ledger(data, venmo_info, transactions, game_ids_settled) -> str:
-    out_string = "BILLS\n=============\n"
+def print_ledger(
+    data, venmo_info, transactions, game_ids_settled, proxy_transactions
+) -> str:
+    out_string = "Bills\n=============\n"
 
     for name in data:
         if data[name] < 0:
@@ -118,6 +131,13 @@ def print_ledger(data, venmo_info, transactions, game_ids_settled) -> str:
     out_string += "\nTransactions To Settle\n======================\n"
     for debtee, debtor, amount in transactions:
         out_string += f"{debtee} ({venmo_info.get(debtee)}) requests ${amount} from {debtor} ({(venmo_info.get(debtor))})\n"
+
+    out_string += "\nProxies\n================\n"
+    for proxy, getting_proxied, amount in proxy_transactions:
+        if amount < 0:
+            out_string += f"{getting_proxied} ({venmo_info.get(getting_proxied)}) requests ${-amount} from {proxy} ({(venmo_info.get(proxy))})\n"
+        else:
+            out_string += f"{proxy} ({venmo_info.get(proxy)}) requests ${amount} from {getting_proxied} ({(venmo_info.get(getting_proxied))})\n"
 
     out_string += f"\nGames Settled\n=================\n{', '.join(game_ids_settled)}"
 
@@ -133,11 +153,14 @@ def main():
     original_data = deepcopy(data)
 
     if args.proxies:
-        data = settle_proxies(args.proxies, data)
+        data, proxy_transactions = settle_proxies(args.proxies, data)
+        print(proxy_transactions)
 
     transactions = compute_transactions(data)
 
-    out_string = print_ledger(original_data, venmo_info, transactions, game_ids_settled)
+    out_string = print_ledger(
+        original_data, venmo_info, transactions, game_ids_settled, proxy_transactions
+    )
     print(out_string)
 
 
