@@ -118,7 +118,7 @@ def settle_proxies(
 
 
 def print_ledger(
-    data, venmo_info, transactions, game_ids_settled, proxy_transactions
+    data, venmo_info, transactions, game_ids_settled, proxy_transactions=None
 ) -> str:
     out_string = "Bills\n=============\n"
 
@@ -132,12 +132,13 @@ def print_ledger(
     for debtee, debtor, amount in transactions:
         out_string += f"{debtee} ({venmo_info.get(debtee)}) requests ${amount} from {debtor} ({(venmo_info.get(debtor))})\n"
 
-    out_string += "\nProxies\n================\n"
-    for proxy, getting_proxied, amount in proxy_transactions:
-        if amount < 0:
-            out_string += f"{getting_proxied} ({venmo_info.get(getting_proxied)}) requests ${-amount} from {proxy} ({(venmo_info.get(proxy))})\n"
-        else:
-            out_string += f"{proxy} ({venmo_info.get(proxy)}) requests ${amount} from {getting_proxied} ({(venmo_info.get(getting_proxied))})\n"
+    if proxy_transactions:
+        out_string += "\nProxies\n================\n"
+        for proxy, getting_proxied, amount in proxy_transactions:
+            if amount < 0:
+                out_string += f"{getting_proxied} ({venmo_info.get(getting_proxied)}) requests ${-amount} from {proxy} ({(venmo_info.get(proxy))})\n"
+            else:
+                out_string += f"{proxy} ({venmo_info.get(proxy)}) requests ${amount} from {getting_proxied} ({(venmo_info.get(getting_proxied))})\n"
 
     out_string += f"\nGames Settled\n=================\n{', '.join(game_ids_settled)}"
 
@@ -152,9 +153,9 @@ def main():
     data, venmo_info, game_ids_settled = get_spreadsheet_data()
     original_data = deepcopy(data)
 
+    proxy_transactions = []
     if args.proxies:
         data, proxy_transactions = settle_proxies(args.proxies, data)
-        print(proxy_transactions)
 
     transactions = compute_transactions(data)
 
