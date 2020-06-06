@@ -67,11 +67,11 @@ def get_spreadsheet_data() -> Tuple[Dict[str, float], Dict[str, str], Set[str]]:
 
     assert len(game_ids_to_settle_set) == length_ids
 
-    all_results = {}
+    all_results: Dict[str, Dict[str, float]] = {}
     venmo_info: Dict[str, str] = {}
 
     for row in cleaned_results_worksheet:
-        player_results = {}
+        player_results: Dict[str, float] = {}
         for gid in game_ids_to_settle:
             if gid in row:
                 player_pnl = row[gid]
@@ -97,9 +97,9 @@ def settle_proxies(
     proxies, data
 ) -> Tuple[Dict[str, float], List[Tuple[str, str, float]]]:
     proxied_data = deepcopy(data)
-    proxy_transactions = []
+    proxy_transactions: List[Tuple[str, str, float]] = []
 
-    proxy_groups = proxies.split(";")
+    proxy_groups: List[str] = proxies.split(";")
     for proxy_pair in proxy_groups:
         proxy_names = proxy_pair.split(",")
         getting_proxied = proxy_names[0]
